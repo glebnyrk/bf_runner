@@ -6,11 +6,17 @@ use std::{
 };
 #[derive(PartialEq, Eq)]
 enum Block {
+    /* Jump for data pointer */
     Jump(isize),
+    /* Increments cell under data pointer to a value specified by u8 */
     Modify(u8),
+    /* Read from stdin */
     Read,
+    /* Write to stdout */
     Write,
+    /* Loop block for whiles `[]` and the skelet of the program */
     Loop(Vec<Block>),
+    /* None value. Here because i am too lazy to do all properly */
     None
 }
 fn main() {
@@ -21,10 +27,14 @@ fn main() {
     let tree = start_parse(code.as_slice());
     run(tree);
 }
+/* State of BF program */
 struct State {
+    /* Data pointer position */
     datap: isize,
+    /* memory */
     heap: HashMap<isize, u8>,
 }
+/* Entrance to recursive running of BF program */
 fn run(b: Block) {
     let mut state = State {
         datap: 0,
@@ -75,9 +85,9 @@ fn execute(b: &Block, state: &mut State) {
 }
 fn start_parse(code: &[u8]) -> Block {
     let mut jump = 0;
-    while !b",.<>+-[]".contains(&code[jump]) {
-        jump += 1;
-    }
+    while !b",.<>+-[]".contains(&code[jump]) { /*                  */
+        jump += 1;                             /* skiping comments */
+    }                                          /*                  */
     let mut l = Vec::new();
     while jump < code.len() {
         let (b, j) = parse(&code[jump..]);
@@ -92,9 +102,9 @@ fn parse(code: &[u8]) -> (Block, usize) {
         Modify,
     }
     let mut jump = 0;
-    while jump < code.len() && !(b",.<>+-[]".contains(&code[jump])) {
-        jump += 1;
-    }
+    while jump < code.len() && !(b",.<>+-[]".contains(&code[jump])) { /*                  */
+        jump += 1;                                                    /* skiping comments */
+    }                                                                 /*                  */
     if jump >= code.len(){
         return (Block::None, jump);
     }
@@ -104,12 +114,13 @@ fn parse(code: &[u8]) -> (Block, usize) {
         while jump < code.len() && code[jump] != b']' {
             let (b, j) = parse(&code[jump..]);
             jump += j;
-            while jump < code.len() && !(b",.<>+-[]".contains(&code[jump])) {
-                jump += 1;
-            }
-            if b != Block::None {
-                l.push(b);
-            }
+            while jump < code.len() && !(b",.<>+-[]".contains(&code[jump])) { /*                  */
+                jump += 1;                                                    /* skiping comments */  
+            }                                                                 /*       yes, again */  
+            
+            if b != Block::None { /*                                                             */
+                l.push(b);        /* skiping None blocks because they are part of my imagination */
+            }                     /*                                                             */  
         }
         jump += 1;
         return (Block::Loop(l), jump);
@@ -117,8 +128,8 @@ fn parse(code: &[u8]) -> (Block, usize) {
         return (Block::Write, jump + 1);
     } else if code[jump] == b',' {
         return (Block::Read, jump + 1);
-    } else {
-        let mode = match code[jump] {
+    } else { //here is the optimization
+        let mode = match code[jump] { //deciding which type of serial operator is that block
             b'>' | b'<' => ManyMode::Jump,
             b'+' | b'-' => ManyMode::Modify,
             v => unreachable!("got this char '{}'", v as char),
