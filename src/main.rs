@@ -1,10 +1,10 @@
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::{HashMap},
     env::args,
     fs::File,
-    io::{Read, Stdin, Write, stdin, stdout},
+    io::{Read, Write, stdin, stdout},
 };
-#[derive(Debug, PartialEq, Eq)]
+#[derive(PartialEq, Eq)]
 enum Block {
     Jump(isize),
     Modify(u8),
@@ -19,10 +19,6 @@ fn main() {
     let mut code = Vec::new();
     file.read_to_end(&mut code).unwrap();
     let tree = start_parse(code.as_slice());
-    let mut debug_file = File::create("bftree.debug").unwrap();
-    debug_file
-        .write_all(format!("{:#?}", tree).as_bytes())
-        .unwrap();
     run(tree);
 }
 struct State {
