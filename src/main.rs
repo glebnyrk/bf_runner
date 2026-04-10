@@ -1,8 +1,8 @@
 use std::{
-    collections::{HashMap},
+    collections::HashMap,
     env::args,
     fs::File,
-    io::{Read, Write, stdin, stdout},
+    io::{Read, Write, stdin, stdout}, os::linux::raw::stat,
 };
 #[derive(PartialEq, Eq)]
 enum Block {
@@ -30,15 +30,15 @@ fn main() {
 /* State of BF program */
 struct State {
     /* Data pointer position */
-    datap: isize,
+    datap: usize,
     /* memory */
-    heap: HashMap<isize, u8>,
+    heap: Vec<u8>
 }
 /* Entrance to recursive running of BF program */
 fn run(b: Block) {
     let mut state = State {
         datap: 0,
-        heap: HashMap::new(),
+        heap: vec![0]
     };
     match b {
         Block::Loop(blocks) => {
@@ -51,27 +51,29 @@ fn run(b: Block) {
 }
 fn execute(b: &Block, state: &mut State) {
     match b {
-        Block::Jump(amount) => state.datap += amount,
+        Block::Jump(amount) => {
+            let new = state.datap as isize + *amount;
+            debug_assert!(new >= 0);
+            let new = new as usize;
+            state.datap = new;
+            if new >= state.heap.len(){
+                state.heap.append(&mut vec![0].repeat(new - state.heap.len() + 1));
+            }
+        }
         Block::Modify(amount) => {
-            state.heap.insert(
-                state.datap,
-                state
-                    .heap
-                    .get(&state.datap)
-                    .unwrap_or(&0)
-                    .wrapping_add(*amount),
-            );
+            let old = state.heap[state.datap];
+            state.heap[state.datap] = old.wrapping_add(*amount);
         }
         Block::Read => {
             let mut buf = [0u8];
             stdin().read(&mut buf).unwrap();
-            state.heap.insert(state.datap, buf[0]);
+            state.heap[state.datap] = buf[0];
         }
         Block::Write => {
-            stdout().write_all(&[*state.heap.get(&state.datap).unwrap_or(&0)]).unwrap();
+            stdout().write_all(&[state.heap[state.datap]]).unwrap();
         }
         Block::Loop(blocks) => loop {
-            let cond = *state.heap.get(&state.datap).unwrap_or(&0) != 0;
+            let cond = state.heap[state.datap] != 0;
             if cond {
                 for b in blocks {
                     execute(b, state);
