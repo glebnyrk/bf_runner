@@ -1,8 +1,7 @@
 use std::{
-    collections::HashMap,
     env::args,
     fs::File,
-    io::{Read, Write, stdin, stdout}, os::linux::raw::stat,
+    io::{Read, Write, stdin, stdout},
 };
 #[derive(PartialEq, Eq)]
 enum Block {
